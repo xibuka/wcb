@@ -18,6 +18,12 @@ LANG="CN" #EN,CN,JP https://www.wunderground.com/weather/api/d/docs?d=language-s
 
 hds=[{'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6'}]
 
+chatUsersList=[]
+chatStart="开始聊天"
+chatStartMsg="你好，我是shiri，咱们唠点什么？"
+chatEnd="886"
+chatEndMsg="拜拜 :)"
+
 def TransToEn(city_name):
     url  = "https://translate.google.com/m?sl=auto&tl=en&ie=UTF-8&hl=en&q=" + city_name
     html = requests.get(url, headers=hds[0], allow_redirects=False, timeout=3)
@@ -49,13 +55,23 @@ def WeatherSummary(city_name):
     print(summary)
     print ("Current temperature in %s is: %s" % (city_name, temp_c))
 
-# 自动回复
-# 封装好的装饰器，当接收到的消息是Text，即文字消息
+# auto reply if the message is Text
 @itchat.msg_register('Text')
 def text_reply(msg):
-    # 当消息不是由自己发出的时候
-    if  msg['FromUserName'] == myUserName:
-        # 发送一条提示给文件助手
+
+    # add/remove user to chat list when he/she want to chat or quit
+    if   msg['Text'] == chatStart:
+        chatUsersList.append(msg['FromUserName'])
+        return(chatStartMsg)
+    elif msg['Text'] == chatEnd:
+        chatUsersList.remove(msg['FromUserName'])
+        return(chatEndMsg)
+    else:
+        pass
+
+    # chat to user when he/she is in the chatUsersList
+    if msg['FromUserName'] in chatUsersList:
+        # backup msg to filehelper
         itchat.send_msg(u"[%s]收到好友@%s 的信息：%s\n" %
                         (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(msg['CreateTime'])),
                          msg['User']['NickName'], msg['Text']), 'filehelper')
@@ -70,12 +86,12 @@ def text_reply(msg):
         res = requests.get(url, params=query, headers=headers).text
 
         # reply
-        return "[6月]:" + json.loads(res).get('text').replace('<br>', '\n')
+        return json.loads(res).get('text').replace('<br>', '\n')
 
 if __name__ == '__main__':
     itchat.auto_login(enableCmdQR=2)
 
-    # 获取自己的UserName
+    # get own UserName
     myUserName = itchat.get_friends(update=True)[0]["UserName"]
 
     itchat.run()
