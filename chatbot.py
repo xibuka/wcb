@@ -23,6 +23,8 @@ chatStart="开始聊天"
 chatStartMsg="你好，我是shiri，咱们唠点什么？"
 chatEnd="886"
 chatEndMsg="拜拜 :)"
+translateStart="翻译"
+weatherStart="天气"
 
 def TransToEn(city_name):
     url  = "https://translate.google.com/m?sl=auto&tl=en&ie=UTF-8&hl=en&q=" + city_name
@@ -32,28 +34,36 @@ def TransToEn(city_name):
 
 def GetLocation(address):
     geocoder = Geocoder()
-    result = geocoder.geocode(address, language="en")
-    return result.coordinates
+    try: 
+        result = geocoder.geocode(address, language="en")
+        return result.coordinates
+    except Exception as e:
+        return (None,None)
 
 def WeatherSummary(city_name):
 
     city_name_en=TransToEn(city_name)
     (x,y) = GetLocation(city_name_en)
 
-    #url = 'http://api.wunderground.com/api/33161f9ccca4985f/geolookup/conditions/'
+    if (x,y) == (None,None):
+        return("Invaild input %s" % city_name)
+
     url = 'http://api.wunderground.com/api/33161f9ccca4985f/geolookup/conditions/forecast/'
     url = url + 'lang:' + LANG + '/q/'+str(x)+','+str(y)+'.json'
-    print(url)
     r = requests.get(url, headers=hds[0], allow_redirects=False, timeout=3)
 
     parsed_json=r.json()
     location = parsed_json['location']['city']
     temp_c = parsed_json['current_observation']['temp_c']
     current_time=parsed_json['forecast']['txt_forecast']['date']
-    print(current_time)
+
     summary=parsed_json['forecast']['txt_forecast']['forecastday'][0]['fcttext_metric']
-    print(summary)
-    print ("Current temperature in %s is: %s" % (city_name, temp_c))
+
+    #print(url)
+    #print(parsed_json)
+    #print("Current temperature in %s is: %s" % (city_name, temp_c))
+
+    return("现在时间 %s, %s 气温 %s 摄氏度。%s" % (current_time, city_name, temp_c, summary))
 
 # auto reply if the message is Text
 @itchat.msg_register('Text')
@@ -66,6 +76,12 @@ def text_reply(msg):
     elif msg['Text'] == chatEnd:
         chatUsersList.remove(msg['FromUserName'])
         return(chatEndMsg)
+    elif translateStart in msg['Text'] :
+        word=msg['Text'].replace(translateStart,'')
+        return(TransToEn(word))
+    elif weatherStart in msg['Text'] :
+        weatherTargetPlace=msg['Text'].replace(weatherStart,'')
+        return(WeatherSummary(weatherTargetPlace))
     else:
         pass
 
