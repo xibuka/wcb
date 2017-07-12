@@ -77,10 +77,10 @@ def text_reply(msg):
         chatUsersList.remove(msg['FromUserName'])
         return(chatEndMsg)
     elif translateStart in msg['Text'] :
-        word=msg['Text'].replace(translateStart,'')
+        word=msg['Text'].replace(translateStart,'',1)
         return(TransToEn(word))
     elif weatherStart in msg['Text'] :
-        weatherTargetPlace=msg['Text'].replace(weatherStart,'')
+        weatherTargetPlace=msg['Text'].replace(weatherStart,'',1)
         return(WeatherSummary(weatherTargetPlace))
     else:
         pass
