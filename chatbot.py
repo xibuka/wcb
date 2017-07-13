@@ -105,7 +105,7 @@ def text_reply(msg):
         return json.loads(res).get('text').replace('<br>', '\n')
 
 if __name__ == '__main__':
-    itchat.auto_login(enableCmdQR=2)
+    itchat.auto_login(enableCmdQR=2, hotReload=True)
 
     # get own UserName
     myUserName = itchat.get_friends(update=True)[0]["UserName"]
