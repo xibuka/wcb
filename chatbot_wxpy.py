@@ -8,6 +8,7 @@ import time
 import json                       
 import geoip2.webservice
 import _thread, threading
+import random
 from bs4 import BeautifulSoup     
 from pygeocoder import Geocoder, GeocoderResult
 
@@ -20,14 +21,27 @@ LANG="CN" #EN,CN,JP https://www.wunderground.com/weather/api/d/docs?d=language-s
 
 hds=[{'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6'}]
 
+help="帮助,help,Help"
 chatUsersList=[]
 chatStart="开始聊天"
 chatStartMsg="你好，我是shiri，咱们唠点什么？"
 chatEnd="886"
 chatEndMsg="拜拜 :)"
-translateStart="翻译"
-weatherStart="天气"
-douTuStart="斗图"
+translate="翻译"
+weather="天气"
+douTu="斗图"
+newYear="过年好,新年好,拜年"
+dogRain="狗年大吉"
+helpMsg= \
+        help      + ":显示帮助信息\n" + \
+        chatStart + ":开始聊天\n" + \
+        chatEnd   + ":结束聊天\n" + \
+        translate + " + '单词'：谷歌翻译\n" + \
+        weather   + " + '地点'：不靠谱天气预报\n" + \
+        douTu     + " + '关键词'：来斗图阿（下线）\n" + \
+        newYear   + ": 新年祝福\n" + \
+        dogRain   + ": 为你下一场狗雨" 
+
 
 TULING_APIKEY = 'e4680558cea54262914cb2e68eea7149'    # change to your API KEY
 # 初始化图灵机器人
@@ -90,6 +104,23 @@ def reply_doutu(msg,keyword):
 
     return 
 
+# happy Chinese new year
+def getRandomGreeting():
+  response = requests.get("http://www.xjihe.com/api/life/greetings?festival=新年&page=10", headers = {'apiKey':'sQS2ylErlfm9Ao2oNPqw6TqMYbJjbs4g'})
+  results = response.json()['result']
+  greeting = results[random.randrange(len(results))]['words']
+  return greeting
+
+# happy Chinese new year
+def getRandomDogRain():
+  textList = [
+          '财运旺旺,掉黄色狗子', 
+          '事业旺旺,掉黑色狗子', 
+          '福气旺旺,掉白色狗子', 
+          '身体旺旺,掉棕色狗子',
+          '过个旺年,掉抱福字的狗子',]
+  return textList[random.randrange(len(textList))]
+
 # 自动回复所有文字消息
 @bot.register(msg_types=TEXT, except_self=False)
 def reply_self(msg):
@@ -101,21 +132,27 @@ def reply_self(msg):
     print( 'received: {} ({}) from {}'.format(msg.text, msg.type, msg.sender.name))
 
     # add/remove user to chat list when he/she want to chat or quit
-    if   msg.text == chatStart:
+    if   msg.text in help:
+        return helpMsg
+    elif msg.text == chatStart:
         chatUsersList.append(chat_sender)
         return chatStartMsg
     elif msg.text == chatEnd:
         chatUsersList.remove(chat_sender)
         return chatEndMsg
-    elif translateStart in msg.text :
-        word=msg.text.replace(translateStart,'',1)
+    elif translate in msg.text :
+        word=msg.text.replace(translate,'',1)
         return(TransToEn(word))
-    elif weatherStart in msg.text :
-        weatherTargetPlace=msg.text.replace(weatherStart,'',1)
+    elif weather in msg.text :
+        weatherTargetPlace=msg.text.replace(weather,'',1)
         return(WeatherSummary(weatherTargetPlace))
-    elif douTuStart in msg.text :
-        keyword=msg.text.replace(douTuStart,'',1)
+    elif douTu in msg.text :
+        keyword=msg.text.replace(douTu,'',1)
         return(reply_doutu(msg, keyword))
+    elif msg.text in newYear :
+        return(getRandomGreeting())
+    elif dogRain == msg.text :
+        return(getRandomDogRain())
     else:
         pass
 
